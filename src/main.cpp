@@ -13,7 +13,17 @@ int main(int argc, const char *argv[]) {
 	CommonTokenStream tokens(&lexer);
 	tokens.fill();
 	Python3Parser parser(&tokens);
+
+	// Add error listener
+	parser.removeErrorListeners();
+
 	tree::ParseTree *tree = parser.file_input();
+
+	// Check for parser errors
+	if (parser.getNumberOfSyntaxErrors() > 0) {
+		return 1;
+	}
+
 	EvalVisitor visitor;
 	visitor.visit(tree);
 	return 0;
