@@ -77,6 +77,76 @@ public:
         }
     }
 
+    Value operator+(const Value& other) const {
+        if (type == STRING && other.type == STRING) {
+            return Value(getString() + other.getString());
+        }
+        if (type == INT && other.type == INT) {
+            return Value(getInt() + other.getInt());
+        }
+        double a = getFloat();
+        double b = other.getFloat();
+        return Value(a + b);
+    }
+
+    Value operator-(const Value& other) const {
+        if (type == INT && other.type == INT) {
+            return Value(getInt() - other.getInt());
+        }
+        double a = getFloat();
+        double b = other.getFloat();
+        return Value(a - b);
+    }
+
+    Value operator*(const Value& other) const {
+        if (type == STRING && other.type == INT) {
+            std::string result;
+            long long count = other.getInt();
+            if (count < 0) count = 0;
+            for (long long i = 0; i < count; i++) {
+                result += getString();
+            }
+            return Value(result);
+        }
+        if (type == INT && other.type == INT) {
+            return Value(getInt() * other.getInt());
+        }
+        double a = getFloat();
+        double b = other.getFloat();
+        return Value(a * b);
+    }
+
+    Value operator/(const Value& other) const {
+        double b = other.getFloat();
+        if (std::abs(b) < 1e-12) {
+            throw std::runtime_error("Division by zero");
+        }
+        double a = getFloat();
+        return Value(a / b);
+    }
+
+    bool operator==(const Value& other) const {
+        if (type != other.type) {
+            if ((type == INT || type == FLOAT) && (other.type == INT || other.type == FLOAT)) {
+                return getFloat() == other.getFloat();
+            }
+            return false;
+        }
+
+        switch (type) {
+            case NONE: return true;
+            case BOOL: return getBool() == other.getBool();
+            case INT: return getInt() == other.getInt();
+            case FLOAT: return std::abs(getFloat() - other.getFloat()) < 1e-12;
+            case STRING: return getString() == other.getString();
+            default: return false;
+        }
+    }
+
+    bool operator!=(const Value& other) const {
+        return !(*this == other);
+    }
+
     bool isTruthy() const {
         switch (type) {
             case NONE: return false;

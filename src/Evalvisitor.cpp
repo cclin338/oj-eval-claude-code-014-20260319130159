@@ -67,25 +67,25 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
         // Augmented assignment - skip for now
         return {};
     } else if (testlists.size() > 1) {
-        // Assignment
+        // Assignment: x = 1 or x = y = 1
         auto rightValues = evaluateTestlist(testlists.back());
 
         if (!rightValues.empty()) {
-            // Simple case: x = value
+            // Handle single assignment: x = value
             auto leftTests = testlists[0]->test();
-            if (!leftTests.empty()) {
-                auto result = visit(leftTests[0]);
-                try {
-                    Value leftValue = std::any_cast<Value>(result);
-                    // Simple assignment to variable
-                    // TODO: Handle more complex left-hand sides
-                } catch (...) {
-                    // Not a simple value
+            if (leftTests.size() == 1) {
+                // Get the left expression
+                auto leftExpr = leftTests[0];
+                // Check if it's a simple variable name
+                auto atomExpr = leftExpr->or_test()->and_test(0)->not_test(0)->comparison()->arith_expr(0)->term(0)->factor(0)->atom_expr();
+                if (atomExpr && atomExpr->atom() && atomExpr->atom()->NAME()) {
+                    std::string varName = atomExpr->atom()->NAME()->getText();
+                    currentScope().setVariable(varName, rightValues[0]);
                 }
             }
         }
     } else {
-        // Expression statement
+        // Expression statement: just evaluate it
         evaluateTestlist(testlists[0]);
     }
 
