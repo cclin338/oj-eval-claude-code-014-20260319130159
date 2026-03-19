@@ -147,6 +147,28 @@ public:
         return !(*this == other);
     }
 
+    bool operator<(const Value& other) const {
+        if (type == STRING && other.type == STRING) {
+            return getString() < other.getString();
+        }
+        return getFloat() < other.getFloat();
+    }
+
+    bool operator>(const Value& other) const {
+        if (type == STRING && other.type == STRING) {
+            return getString() > other.getString();
+        }
+        return getFloat() > other.getFloat();
+    }
+
+    bool operator<=(const Value& other) const {
+        return (*this < other) || (*this == other);
+    }
+
+    bool operator>=(const Value& other) const {
+        return (*this > other) || (*this == other);
+    }
+
     bool isTruthy() const {
         switch (type) {
             case NONE: return false;

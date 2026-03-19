@@ -180,12 +180,54 @@ std::any EvalVisitor::visitNot_test(Python3Parser::Not_testContext *ctx) {
 }
 
 std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
-    // For now, just visit the first arith_expr
-    if (!ctx->arith_expr().empty()) {
-        return visit(ctx->arith_expr(0));
+    auto arithExprs = ctx->arith_expr();
+    auto compOps = ctx->comp_op();
+
+    if (arithExprs.empty()) {
+        return std::any(Value());
     }
 
-    return std::any(Value());
+    if (arithExprs.size() == 1) {
+        return visit(arithExprs[0]);
+    }
+
+    // Evaluate first expression
+    auto firstResult = visit(arithExprs[0]);
+    Value left;
+    try {
+        left = std::any_cast<Value>(firstResult);
+    } catch (...) {
+        left = Value();
+    }
+
+    // Simple comparison of first two expressions
+    auto secondResult = visit(arithExprs[1]);
+    Value right;
+    try {
+        right = std::any_cast<Value>(secondResult);
+    } catch (...) {
+        right = Value();
+    }
+
+    bool result = false;
+    if (compOps.size() > 0) {
+        std::string op = compOps[0]->getText();
+        if (op == "<") {
+            result = left < right;
+        } else if (op == ">") {
+            result = left > right;
+        } else if (op == "==") {
+            result = left == right;
+        } else if (op == "!=") {
+            result = left != right;
+        } else if (op == "<=") {
+            result = left <= right;
+        } else if (op == ">=") {
+            result = left >= right;
+        }
+    }
+
+    return std::any(Value(result));
 }
 
 std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
