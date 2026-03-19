@@ -189,21 +189,84 @@ std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
 }
 
 std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
-    // For now, just visit the first term
-    if (!ctx->term().empty()) {
-        return visit(ctx->term(0));
+    auto terms = ctx->term();
+    auto ops = ctx->addorsub_op();
+
+    if (terms.empty()) {
+        return std::any(Value());
     }
 
-    return std::any(Value());
+    // Evaluate first term
+    auto firstResult = visit(terms[0]);
+    Value result;
+    try {
+        result = std::any_cast<Value>(firstResult);
+    } catch (...) {
+        result = Value();
+    }
+
+    // Apply operations
+    for (size_t i = 1; i < terms.size(); i++) {
+        auto termResult = visit(terms[i]);
+        Value termValue;
+        try {
+            termValue = std::any_cast<Value>(termResult);
+        } catch (...) {
+            termValue = Value();
+        }
+
+        if (i-1 < ops.size()) {
+            std::string op = ops[i-1]->getText();
+            if (op == "+") {
+                result = result + termValue;
+            } else if (op == "-") {
+                result = result - termValue;
+            }
+        }
+    }
+
+    return std::any(result);
 }
 
 std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
-    // For now, just visit the first factor
-    if (!ctx->factor().empty()) {
-        return visit(ctx->factor(0));
+    auto factors = ctx->factor();
+    auto ops = ctx->muldivmod_op();
+
+    if (factors.empty()) {
+        return std::any(Value());
     }
 
-    return std::any(Value());
+    // Evaluate first factor
+    auto firstResult = visit(factors[0]);
+    Value result;
+    try {
+        result = std::any_cast<Value>(firstResult);
+    } catch (...) {
+        result = Value();
+    }
+
+    // Apply operations
+    for (size_t i = 1; i < factors.size(); i++) {
+        auto factorResult = visit(factors[i]);
+        Value factorValue;
+        try {
+            factorValue = std::any_cast<Value>(factorResult);
+        } catch (...) {
+            factorValue = Value();
+        }
+
+        if (i-1 < ops.size()) {
+            std::string op = ops[i-1]->getText();
+            if (op == "*") {
+                result = result * factorValue;
+            } else if (op == "/") {
+                result = result / factorValue;
+            }
+            // TODO: Handle // and %
+        }
+    }
+
+    return std::any(result);
 }
 
 std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
